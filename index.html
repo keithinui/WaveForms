@@ -28,6 +28,7 @@
     <form name="ecgView">
         <input type="button" value="Base Line" onclick="startfnc()">
         <input type="button" value="Inst" onclick="instfnc()">
+        <input type="button" value="Cal" onclick="calfnc()">
 
         <input type="text" name="speedValue" size="20" value="Speed: 25mm/s">
         <input type="button" value="Down" onclick="speedDownfnc()">
@@ -68,7 +69,7 @@
 		var gain = 1.0;
 		var patient = 0
 		var DataCount = 50;  				// Data length in ms on one packet   50ms
-
+        var calTimer = 0;                   // Cal timer(200-161ms=0, 160-41ms=205, 40-1ms=0)
 
         var m_workDC;
         var cvs;							// Canvas
@@ -139,11 +140,30 @@
                                 tmp = ecgData[NowPoint][q-4];
                                 break;
                         }
+
+                        // ***** Add Cal during Cal timer > 0 ****
+                        //  205  ___ 3mm(160 to 40ms))
+                        //      |   |
+                        //   0 _|   |_ 
+                        //   1mm     1mm
+                        if(calTimer>0){
+                            if(calTimer<=160 && calTimer>40){
+                                tmp=205;
+                            }else{
+                                tmp=0;
+				            }
+                        }
+
                         Vnew[q] = gain * tmp / 8;		// 12 lead waveforms (I to V6)
 					}
 
                     if (yMax[q] <= Vnew[q]) { yMax[q] = Vnew[q]; }
                     if (yMin[q] >= Vnew[q]) { yMin[q] = Vnew[q]; }
+                }
+
+                // ***** Cal timer check *****
+                if(calTimer>0){
+                    calTimer-=1;
                 }
 
 
@@ -207,7 +227,6 @@
         }
 
 
-
         //***************************************************************************
         // Pen size
         //***************************************************************************
@@ -221,7 +240,6 @@
         }
 
 
-
         //***************************************************************************
         // Inst process
         //***************************************************************************
@@ -233,6 +251,14 @@
 			instTimer = 0;
 			document.ecgView.moji.value = "Inst: off";
 		}
+        }
+
+
+        //***************************************************************************
+        // Cal process
+        //***************************************************************************
+        function calfnc() {
+		    calTimer = 200;
         }
 
 
